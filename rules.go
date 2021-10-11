@@ -31,7 +31,6 @@ func uncheckedTypeAssert(m dsl.Matcher) {
 }
 
 func unnecessaryElse(m dsl.Matcher) {
-	// TODO: it doesn't match for whatever reason.
 	m.Match(`var $v $_; if $cond { $v = $x } else { $v = $y }`).
 		Where(m["y"].Pure).
 		Report(`rewrite as '$v := $y; if $cond { $v = $x }'`)

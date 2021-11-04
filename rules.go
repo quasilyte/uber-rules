@@ -41,35 +41,30 @@ func localVarDecl(m dsl.Matcher) {
 	// m.Match()
 }
 
-// avoidFailedTo detects error messages like
+// errorWrapping checks Go Uber error wrapping rules.
 //
-// 	fmt.Errorf("failed to do something: %w", err)
+// For example, instead of this:
 //
-// but you should avoid "failed to" and use
+//    fmt.Errorf("failed to do something: %w", err)
 //
-// 	fmt.Errorf("do something: %w", err)
+// you should prefer this (without "failed to"):
+//
+//    fmt.Errorf("do something: %w", err)
 //
 // according to https://github.com/uber-go/guide/blob/master/style.md#error-wrapping.
-func avoidFailedTo(m dsl.Matcher) {
-	// Match fmt.Errorf and friends.
-	m.Match("$pkg.Errorf($msg, $*msg_args)").Where(
-		m["msg"].Text.Matches(`"failed to.*"`) &&
+func errorWrapping(m dsl.Matcher) {
+	m.Match(`$pkg.Errorf($msg, $*_)`).Where(
+		m["msg"].Text.Matches(`^"failed to .*: %[wvs]"$`) &&
 			m["pkg"].Text.Matches("fmt|errors|xerrors"),
-	).Report("Avoid phrases like \"failed to\"")
+	).Report(`"failed to" message part is redundant in error wrapping`)
 
-	// Match errors.New and friends.
-	m.Match("$pkg.New($msg)").Where(
-		m["msg"].Text.Matches(`"failed to.*"`) &&
-			m["pkg"].Text.Matches("fmt|errors|xerrors"),
-	).Report("Avoid phrases like \"failed to\"")
+	m.Match(`$pkg.Wrap($_, $msg)`).Where(
+		m["msg"].Text.Matches(`^"failed to .*"$`) &&
+			m["pkg"].Text.Matches("errors|xerrors"),
+	).Report(`"failed to" message part is redundant in error wrapping`)
 
-	// Match errors.Wrap.
-	m.Match("errors.Wrap($err, $msg)").Where(
-		m["msg"].Text.Matches(`"failed to.*"`),
-	).Report("Avoid phrases like \"failed to\"")
-
-	// Match errors.Wrapf.
-	m.Match("errors.Wrapf($err, $msg, $*msg_args)").Where(
-		m["msg"].Text.Matches(`"failed to.*"`),
-	).Report("Avoid phrases like \"failed to\"")
+	m.Match("$pkg.Wrapf($_, $msg, $*_)").Where(
+		m["msg"].Text.Matches(`^"failed to .*: %[wvs]"$`) &&
+			m["pkg"].Text.Matches("errors|xerrors"),
+	).Report(`"failed to" message part is redundant in error wrapping`)
 }

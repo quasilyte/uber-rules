@@ -1,6 +1,7 @@
 package target
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 )
@@ -102,4 +103,16 @@ func unnecessaryElse() {
 		}
 		_ = x
 	}
+}
+
+func avoidFailedTo(e error) {
+	// OK: not a wrapping call.
+	_ = fmt.Errorf("failed to succeed in life")
+	_ = errors.New("failed to succeed in life")
+
+	// Could be an error wrapping, but it's not a usual form anyway (missing ':').
+	_ = fmt.Errorf("failed to succeed in life %w", e)
+
+	_ = fmt.Errorf("failed to succeed in life: %w", e) // want `\Q"failed to" message part is redundant in error wrapping`
+	_ = fmt.Errorf("failed to succeed in life: %v", e) // want `\Q"failed to" message part is redundant in error wrapping`
 }

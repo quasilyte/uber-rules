@@ -2,6 +2,8 @@ package gorules
 
 import "github.com/quasilyte/go-ruleguard/dsl"
 
+var Bundle = dsl.Bundle{}
+
 func ifacePtr(m dsl.Matcher) {
 	m.Match(`*$x`).
 		Where(m["x"].Type.Underlying().Is(`interface{ $*_ }`)).
